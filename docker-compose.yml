@@ -1,0 +1,11 @@
+services:
+  classifiers:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - hf_cache:/models
+    restart: unless-stopped
+
+volumes:
+  hf_cache:

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Classifiers</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="header">
+    <h1>Classifiers</h1>
+    <p>Классификация изображений животных и новостных текстов</p>
+</header>
+
+<main>
+    <section class="carousel" aria-label="Скриншоты приложения">
+        <button type="button" class="arrow arrow-prev" aria-label="Предыдущий слайд"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button type="button" class="arrow arrow-next" aria-label="Следующий слайд"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        <div class="slides">
+            <figure id="slide-1" class="slide">
+                <img src="screenshots/image_classifier.png" alt="Скриншот 1: классификатор животных">
+                <figcaption>
+                    <h2>Классификатор животных</h2>
+                    <p>Метрики результатов модели классификации изображений. Были датасеты изображений животных, но в них не было
+                    изображений панд, поэтому решила сделать свой маленький датасет. Чтобы в ручную не скачивать 3000+ изображений решила вытягивать их
+                        с открытых источников (iNaturalist). Ссылка на  <a href="https://huggingface.co/datasets/Bubunur/dog-cat-panda">датасет</a>
+                    </p>
+                </figcaption>
+            </figure>
+            <figure id="slide-2" class="slide">
+                <img src="screenshots/animal_model_metrics.png" alt="Скриншот21: классификатор животных">
+                <figcaption>
+                    <h2>Классификатор животных</h2>
+                    <p>Файнтюнила модель google/vit-base-patch16-224-in21k . Эпох сделала 8, точность получилась 97%
+                    Ссылка на <a href="https://huggingface.co/Bubunur/animals-classifier">модель</a>
+                    </p>
+                </figcaption>
+            </figure>
+            <figure id="slide-3" class="slide">
+                <img src="screenshots/news_classifier.png" alt="Скриншот 3: классификатор новостей">
+                <figcaption>
+                    <h2>Классификатор новостей</h2>
+                    <p>Был реализован файнтюнинг microsoft/deberta-v3-base на датасете <a href="https://huggingface.co/datasets/fancyzhx/ag_news">ag_news</a>
+                       Ссылка на <a href="https://huggingface.co/Bubunur/ag-news-classifier">модель</a>
+
+                    </p>
+                </figcaption>
+            </figure>
+            <figure id="slide-4" class="slide">
+                <img src="screenshots/news_metrics.png" alt="Скриншот 4: результаты">
+                <figcaption>
+                    <h2>Результаты</h2>
+                    <p>Пробить потолок 95% не удалось, меняла модели, хотела поменять датасет, но в других датасетах данные по категориям были не равными.</p>
+                </figcaption>
+            </figure>
+        </div>
+    </section>
+    <section class="forms">
+        <form id="image-form" class="card">
+            <h2>Классификация изображений</h2>
+            <input type="file" name="file" accept="image/*" required>
+            <button type="submit">Классифицировать</button>
+            <ul class="result" aria-live="polite"></ul>
+        </form>
+
+        <form id="text-form" class="card">
+            <h2>Классификация новостей</h2>
+            <textarea name="text" rows="5" placeholder="Вставьте текст новости" required></textarea>
+            <button type="submit">Классифицировать</button>
+            <ul class="result" aria-live="polite"></ul>
+        </form>
+    </section>
+</main>
+
+<script>
+    const slides = document.querySelector(".slides");
+    const scrollSlides = (dir) => {
+      const max = slides.scrollWidth - slides.clientWidth;
+      let x = slides.scrollLeft + dir * slides.clientWidth;
+      if (x < 0) x = max;
+      else if (x > max + 1) x = 0;
+      slides.scrollTo({ left: x, behavior: "smooth" });
+    };
+    document.querySelector(".arrow-prev").addEventListener("click", () => scrollSlides(-1));
+    document.querySelector(".arrow-next").addEventListener("click", () => scrollSlides(1));
+
+    const endpoints = {
+      "image-form": "/api/classify/image",
+      "text-form": "/api/classify/text",
+    };
+
+    for (const form of document.querySelectorAll(".forms form")) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const list = form.querySelector(".result");
+        const button = form.querySelector("button");
+        list.innerHTML = "";
+        button.disabled = true;
+        try {
+          const res = await fetch(endpoints[form.id], { method: "POST", body: new FormData(form) });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Ошибка запроса");
+          for (const { label, score } of data) {
+            const li = document.createElement("li");
+            li.textContent = `${label}: ${(score * 100).toFixed(1)}%`;
+            list.append(li);
+          }
+        } catch (err) {
+          const li = document.createElement("li");
+          li.className = "error";
+          li.textContent = err.message;
+          list.append(li);
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
+</script>
+</body>
+</html>
