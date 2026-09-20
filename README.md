@@ -12,7 +12,7 @@
 Нужен установленный [Docker](https://docs.docker.com/get-docker/) с Docker Compose.
 
 ```bash
-git clone <адрес-репозитория>
+git clone https://github.com/Bubunur/Classifiers.git
 cd Classifiers
 docker compose up --build
 ```
